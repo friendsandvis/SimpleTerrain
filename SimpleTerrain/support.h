@@ -99,10 +99,12 @@ class FrameBuffer
 		GLuint getFBOid();
 		GLuint getTexture();
 		GLuint64 getTextureBindLess();
+		GLuint getDepthTexture();
+		GLuint64 getDepthTextureBindLess();
 		
 	private:
-		GLuint fboid, depthrbuffid,texid;
-		GLuint64 texidbindless;
+		GLuint fboid, depthtexid,texid;
+		GLuint64 texidbindless,depthtexidbindless;
 
 		
 		FrameBuffer(const FrameBuffer&) {}

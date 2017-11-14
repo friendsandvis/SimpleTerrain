@@ -427,8 +427,8 @@ void TerrainMesh::setHeightMap(double heightofterrain)
 {
 
 	float *heightData = new float[noofxblocks*noofyblocks];
-	int noofoctaves = 8;
-	somath::vec2 samplearea = somath::vec2(40, 40);
+	int noofoctaves = 3;
+	somath::vec2 samplearea = somath::vec2(70, 70);
 	somath::vec2 resolution = somath::vec2(noofxblocks, noofyblocks);
 
 
@@ -520,7 +520,8 @@ somath::vec2 TerrainMesh::getWorldScale()
 
 FrameBuffer::FrameBuffer()
 {
-	fboid = depthrbuffid = 0;
+	fboid = depthtexid=texid=depthtexidbindless=texidbindless = 0;
+
 }
 void FrameBuffer::makeFrameBuffer(int width, int height, bool depthbufferneeded)
 {
@@ -535,17 +536,23 @@ void FrameBuffer::makeFrameBuffer(int width, int height, bool depthbufferneeded)
 
 	
 	glNamedFramebufferTexture(fboid, GL_COLOR_ATTACHMENT0, texid, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
 
 	if (depthbufferneeded)
 	{
-		glCreateRenderbuffers(1, &depthrbuffid);
-		glNamedRenderbufferStorage(depthrbuffid, GL_DEPTH_COMPONENT32F, width, height);
-		glNamedFramebufferRenderbuffer(fboid, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrbuffid);
+		glCreateTextures(GL_TEXTURE_2D, 1, &depthtexid);
+		glTextureStorage2D(depthtexid, 1, GL_DEPTH_COMPONENT32F, width, height);
+		glTextureParameteri(depthtexid, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(depthtexid, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTextureParameteri(depthtexid, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(depthtexid, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glNamedFramebufferTexture(fboid, GL_DEPTH_ATTACHMENT, depthtexid, 0);
 	}
 
 	texidbindless=glGetTextureHandleARB(texid);
 	glMakeTextureHandleResidentARB(texidbindless);
+	depthtexidbindless = glGetTextureHandleARB(depthtexid);
+	glMakeTextureHandleResidentARB(depthtexidbindless);
 }
 GLuint FrameBuffer::getFBOid()
 {
@@ -555,6 +562,10 @@ GLuint FrameBuffer::getTexture()
 {
 	return texid;
 }
+GLuint FrameBuffer::getDepthTexture()
+{
+	return depthtexid;
+}
 void FrameBuffer::bind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, fboid);
@@ -562,4 +573,8 @@ void FrameBuffer::bind()
 GLuint64 FrameBuffer::getTextureBindLess()
 {
 	return texidbindless;
+}
+GLuint64 FrameBuffer::getDepthTextureBindLess()
+{
+	return depthtexidbindless;
 }
