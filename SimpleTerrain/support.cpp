@@ -6,6 +6,33 @@
 #include<fstream>
 
 
+GLuint getTexture(const char* texturename)
+{
+	GLuint texid;
+	int width, height, cannels;
+
+	stbi_set_flip_vertically_on_load(false);
+	unsigned char* data = stbi_load(texturename, &width, &height, &cannels, 4);
+
+	if (!data)
+	{
+		std::cout << "problem loading image" << '\n';
+		return 0;
+	}
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &texid);
+	glTextureImage2DEXT(texid, GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTextureParameteri(texid, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTextureParameteri(texid, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTextureParameteri(texid, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTextureParameteri(texid, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	stbi_image_free((void*)data);
+	return texid;
+
+}
+
+
 int saveHMAP(float* arr, long long size)
 {
 	std::ofstream hmapout;

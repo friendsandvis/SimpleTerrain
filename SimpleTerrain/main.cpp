@@ -1,6 +1,7 @@
 
 #include"support.h"
 #include"socamera.h"
+#include"modelloader.h"
 
 
 //---------------------------data------------------------------------
@@ -18,7 +19,7 @@ Plane plane1;
 TerrainMesh terrain2;
 
 //programs
-soprogram::Program pwaterplane, pviewplane, pterrainplane, pskybox, pblur;
+soprogram::Program pwaterplane, pviewplane, pterrainplane, pskybox, pblur,ptree;
 Skybox sky;
 
 //framebuffers
@@ -27,6 +28,10 @@ FrameBuffer fborefract, fboreflect, fboscene, fboblurH, fboblurV;
 //buffer and image pointers
 GLuint dvmapid, normalmapid, hmapid;
 GLuint64 dvmapidbindless, normalmapidbindless, hmapidbindless;
+
+//Models
+Model tree("textures/");
+
 
 
 
@@ -59,12 +64,17 @@ void init()
 	pterrainplane.makeProgram("Shaders/vterrain.txt","Shaders/gterrain.txt", "Shaders/fterrain.txt");
 	pskybox.makeProgram("Shaders/vskybox.txt", "Shaders/fskybox.txt");
 	pblur.makeProgram("Shaders/vblur.txt","shaders/fblur.txt");
-
+	ptree.makeProgram("Shaders/vtree.txt", "shaders/ftree.txt");
 
 	//mesh initialization
 	plane1.setPlane();
 	terrain2.setTerrainMesh(1000, 1000,1.0,1.0, 5,30.0);
 	terrain2.setHeightMap(10.0f);
+
+	//Models
+	tree.setModel("Models/Tree.obj");
+	tree.makeBuffers();
+
 
 
 	//framebuffer initialization
@@ -79,7 +89,6 @@ void init()
 	sky.setSkybox(files);
 	dvmapid = getTexture("textures/dudv.png",5);
 	normalmapid = getTexture("textures/normalmap.png",5);
-	hmapid=getTextureGreyScale("textures/hmap.png", 1);
 
 	//make texture bindless
 	dvmapidbindless = glGetTextureHandleARB(dvmapid);
@@ -128,6 +137,17 @@ void render()
 	glUniformHandleui64ARB(glGetUniformLocation(pterrainplane.getProgram(), "heightmap"), terrain2.getHmapBindless());
 	terrain2.render();
 
+
+	ptree.useProgram();
+	ptree.setUniformMat4("project", maincamera.getProjectionMatrix().projectionmatrix);
+	ptree.setUniformMat4("view", maincamera.getViewMatrix());
+	ptree.setUniformMat4("model", somath::mat4());
+	ptree.setUniformVec3("light1.lightpos", somath::vec3(1.0));
+	ptree.setUniformVec3("light1.lightcolor", somath::vec3(1.0, 1.0, 1.0));
+	ptree.setUniformVec3("camerapos", maincamera.getPos());
+	tree.render(ptree);
+
+	
 	//render skybox
 	pskybox.useProgram();
 	pskybox.setUniformMat4("project", maincamera.getProjectionMatrix().projectionmatrix);
@@ -154,6 +174,15 @@ void render()
 	pterrainplane.setUniformVec2("worldscale", terrain2.getWorldScale());
 	glUniformHandleui64ARB(glGetUniformLocation(pterrainplane.getProgram(), "heightmap"), terrain2.getHmapBindless());
 	terrain2.render();
+
+	ptree.useProgram();
+	ptree.setUniformMat4("project", maincamera.getProjectionMatrix().projectionmatrix);
+	ptree.setUniformMat4("view", recam.getViewMatrix());
+	ptree.setUniformMat4("model", somath::mat4());
+	ptree.setUniformVec3("light1.lightpos", somath::vec3(1.0));
+	ptree.setUniformVec3("light1.lightcolor", somath::vec3(1.0, 1.0, 1.0));
+	ptree.setUniformVec3("camerapos", maincamera.getPos());
+	tree.render(ptree);
 
 	//render skybox
 	pskybox.useProgram();
@@ -184,12 +213,14 @@ void render()
 	glUniformHandleui64ARB(glGetUniformLocation(pterrainplane.getProgram(), "heightmap"), terrain2.getHmapBindless());
 	terrain2.render();
 
-	//render skybox
-	pskybox.useProgram();
-	pskybox.setUniformMat4("project", maincamera.getProjectionMatrix().projectionmatrix);
-	pskybox.setUniformMat4("view", somath::mat4(somath::mat3(maincamera.getViewMatrix())));
-	glUniformHandleui64ARB(glGetUniformLocation(pskybox.getProgram(), "cubeimage"), sky.getSkyboxTexBindLess());
-	sky.render();
+	ptree.useProgram();
+	ptree.setUniformMat4("project", maincamera.getProjectionMatrix().projectionmatrix);
+	ptree.setUniformMat4("view", maincamera.getViewMatrix());
+	ptree.setUniformMat4("model", somath::mat4());
+	ptree.setUniformVec3("light1.lightpos", somath::vec3(1.0));
+	ptree.setUniformVec3("light1.lightcolor", somath::vec3(1.0, 1.0, 1.0));
+	ptree.setUniformVec3("camerapos", maincamera.getPos());
+	tree.render(ptree);
 
 	//render waterplane with both the textures of reflection and refraction part
 	pwaterplane.useProgram();
@@ -210,7 +241,14 @@ void render()
 	glUniformHandleui64ARB(glGetUniformLocation(pwaterplane.getProgram(), "depthmap"), fborefract.getDepthTextureBindLess());
 	glEnable(GL_BLEND);
 	plane1.render();
-	glEnable(GL_BLEND);
+	glDisable(GL_BLEND);
+
+	//render skybox
+	pskybox.useProgram();
+	pskybox.setUniformMat4("project", maincamera.getProjectionMatrix().projectionmatrix);
+	pskybox.setUniformMat4("view", somath::mat4(somath::mat3(maincamera.getViewMatrix())));
+	glUniformHandleui64ARB(glGetUniformLocation(pskybox.getProgram(), "cubeimage"), sky.getSkyboxTexBindLess());
+	sky.render();
 	
 	
 
@@ -220,7 +258,7 @@ void render()
 	//--------------------------------------------------post processing---------------------------------------------
 
 	//bluring(2 pass gaussian blur)    *4 times
-	for (int z = 0;z < 4;z++)
+	for (int z = 0;z < 3;z++)
 	{
 
 		//-----------------horizontal bluring----------------
@@ -326,6 +364,7 @@ int main()
 	//-------------------------game resource clearing------------------------------
 	window.getWindowID();
 	glfwTerminate();
+
 	return 0;
 }
 
