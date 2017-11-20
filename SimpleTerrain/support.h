@@ -101,6 +101,8 @@ class FrameBuffer
 		GLuint64 getTextureBindLess();
 		GLuint getDepthTexture();
 		GLuint64 getDepthTextureBindLess();
+
+		void destroy();
 		
 	private:
 		GLuint fboid, depthtexid,texid;

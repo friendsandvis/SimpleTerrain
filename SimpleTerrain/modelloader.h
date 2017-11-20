@@ -35,6 +35,8 @@ public:
 	GLuint getTexture();
 	GLuint64 getBindLessTexture();
 	void setBindLess();
+
+	void destroy();
 private:
 	GLuint texid;
 	GLuint64 texidbindless;
@@ -49,6 +51,8 @@ public:
 	void setMesh(std::vector<Vertex> verticies, std::vector<unsigned> indicies, std::vector<Texture> textures);
 	void makeBuffers();
 	void render(soprogram::Program& progid);
+
+	void destroy();
 
 private:
 	std::vector<Vertex> verticies;
@@ -67,6 +71,8 @@ public:
 	int setModel(const char* modelpath);
 	void render(soprogram::Program& progid);
 	void makeBuffers();
+
+	void destroy();
 
 private:
 

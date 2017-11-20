@@ -117,6 +117,32 @@ void update(double delta)
 
 }
 
+void destroy()
+{
+
+	//meshes
+	plane1.destroy();
+	terrain2.destroyTerrain();
+
+	//skybox
+	sky.destroy();
+
+	//framebuffers
+	fborefract.destroy();
+	fboreflect.destroy();
+	fboscene.destroy();
+	fboblurH.destroy();
+	fboblurV.destroy();
+
+	//buffer and image pointers
+	glDeleteTextures(1, &dvmapid);
+	glDeleteTextures(1, &normalmapid);
+	glDeleteTextures(1, &hmapid);
+
+	//Models
+	tree.destroy();
+}
+
 void render()
 {
 	//------------------------------------refraction render scene-------------------------------------------
@@ -362,7 +388,10 @@ int main()
 		glfwSwapBuffers(window.getWindowID());
 	}
 	//-------------------------game resource clearing------------------------------
+	
+	destroy();
 	window.getWindowID();
+	window.destroyWindow();
 	glfwTerminate();
 
 	return 0;

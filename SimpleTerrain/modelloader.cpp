@@ -133,6 +133,13 @@ void Model::makeBuffers()
 		meshes[z].makeBuffers();
 }
 
+void Model::destroy()
+{
+	for (Mesh& mesh : meshes)
+		mesh.destroy();
+
+}
+
 
 
 
@@ -198,6 +205,16 @@ void Mesh::render(soprogram::Program& progid)
 	glBindVertexArray(0);
 }
 
+void Mesh::destroy()
+{
+	glDeleteBuffers(1, &vboid);
+	glDeleteBuffers(1, &eboid);
+	glDeleteVertexArrays(1, &vaoid);
+
+	for (Texture& tex : textures)
+		tex.destroy();
+}
+
 
 
 
@@ -223,6 +240,10 @@ GLuint64 Texture::getBindLessTexture()
 void Texture::setTextureType(aiTextureType type)
 {
 	textype = type;
+}
+void Texture::destroy()
+{
+	glDeleteTextures(1, &texid);
 }
 aiTextureType Texture::getTextureType()
 {

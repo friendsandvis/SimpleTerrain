@@ -169,7 +169,7 @@ Window::Window()
 
 int Window::setWindow(int width, int height, const char* windowname)
 {
-	windowid = glfwCreateWindow(width, height, windowname, nullptr, nullptr);
+	windowid = glfwCreateWindow(width, height, windowname, glfwGetPrimaryMonitor(), nullptr);
 
 	this->width = width;
 	this->height = height;
@@ -604,4 +604,11 @@ GLuint64 FrameBuffer::getTextureBindLess()
 GLuint64 FrameBuffer::getDepthTextureBindLess()
 {
 	return depthtexidbindless;
+}
+
+void FrameBuffer::destroy()
+{
+	glDeleteTextures(1, &texid);
+	glDeleteTextures(1, &depthtexid);
+	glDeleteFramebuffers(1, &fboid);
 }

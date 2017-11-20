@@ -36,6 +36,8 @@ soprogram::Source::Source(const char* sourcefile)
 
 	str = new char[filesize];
 	readFile(file);
+
+	fclose(file);
 }
 
 const char* soprogram::Source::getSource()
@@ -53,8 +55,6 @@ void soprogram::Source::readFile(FILE* file)
 		ch = fgetc(file);
 	}
 	str[z] = '\0';
-
-	fclose(file);
 }
 
 
