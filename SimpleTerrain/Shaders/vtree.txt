@@ -1,0 +1,17 @@
+#version 330 core
+
+layout(location=0)in vec3 pos;
+layout(location=1)in vec3 normal;
+layout(location=2)in vec2 texcoord;
+
+uniform mat4 project,view,model;
+out vec2 texc;
+out vec3 normals;
+out vec3 fragpos;
+void main()
+{
+	texc=texcoord;
+	normals=normalize(vec3(model*vec4(normal,0.0)));
+	fragpos=vec3(model*vec4((15.0*pos.xyz+vec3(-100.0,0.0,-100.0)),1.0));
+	gl_Position=project*view*vec4(fragpos,1.0);
+}

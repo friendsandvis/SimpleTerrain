@@ -1,0 +1,137 @@
+#version 450
+#extension GL_ARB_bindless_texture : require
+
+
+
+
+//output color
+out vec4 outcol;
+
+//simple texture coordinates non tiled - for tiling use the tile float
+in vec2 texcoord;
+uniform float tiles;
+
+//fragpos after all matrix multiplication but non ndc 
+in vec4 fragposnonndc;
+//simple fragpos in world coordinates
+in vec3 fragpos;
+
+
+layout(bindless_sampler)uniform sampler2D tex1;   					//reflection  or any other tex(for normal plane render cases)
+layout(bindless_sampler)uniform sampler2D tex2;					//refraction
+layout(bindless_sampler)uniform sampler2D dvmap;					//dudv map
+layout(bindless_sampler)uniform sampler2D normalmap; 				//normalmap
+layout(bindless_sampler)uniform sampler2D depthmap;                 			//depthmap
+				
+
+//water related uniforms
+float distorsionstrength=0.05;
+uniform float distortionoffset;
+
+//cameraposition
+uniform vec3 camerapos;
+vec3 viewdir=normalize(camerapos-fragpos);
+vec3 planedir=normalize(vec3(camerapos.x,0,camerapos.z)-fragpos);
+
+//normal
+vec3 normals;
+
+//lightpos
+uniform vec3 lightpos;
+
+//projection matrix value
+uniform float np,fp;
+
+//softedge width
+float softedgewidth=20.0;
+
+//get specular value for water frag
+float getSpecularValue()
+{
+	vec3 incidentref=reflect(normalize(fragpos-lightpos),normals);
+	vec3 halfway=normalize(incidentref+viewdir);
+	float specval=dot(incidentref,viewdir);
+	specval=clamp(specval,0.0,1.0);
+	specval=pow(specval,16);
+	return specval;
+}
+
+float getDepthOfWater(vec2 texcoordinates)
+{
+	float surfacedepth=gl_FragCoord.z;
+	surfacedepth=surfacedepth*2-1;
+	surfacedepth=(2*np*fp)/(np+fp-surfacedepth*(fp-np));
+	
+	float floordepth=texture(depthmap,texcoordinates).x;
+	floordepth=floordepth*2-1;
+	floordepth=(2*np*fp)/(np+fp-floordepth*(fp-np));
+
+	return floordepth-surfacedepth;
+}
+
+float getDistanceDistortion()
+{
+	float surfacedepth=gl_FragCoord.z;
+	surfacedepth=surfacedepth*2-1;
+	surfacedepth=(2*np*fp)/(np+fp-surfacedepth*(fp-np));
+
+	return 1.0-clamp(surfacedepth/200,0.0,1.0);
+}
+
+float convertztoDistance(float z)
+{
+	z=z*2-1;
+	z=(2*np*fp)/(np+fp-z*(fp-np));
+	return z;
+}
+
+
+void main()
+{
+		
+			  //ndc conversion of fragpos to get new texture coordinates specific to the view at any time
+			  vec2 texcoordpro=fragposnonndc.xy/fragposnonndc.w;
+			  texcoordpro=texcoordpro*0.5+0.5;				//0-1
+              			  float depthval=getDepthOfWater(texcoordpro);
+			  depthval=clamp(depthval/softedgewidth,0.0,1.0);
+			  
+			  //distorsion calculation
+			  vec2 offsetvector=texture(dvmap,texcoord*tiles+vec2(distortionoffset)).xy;
+			  vec2 offsetvector2=texture(dvmap,texcoord*tiles+vec2(-distortionoffset,0)).xy;
+			  offsetvector=offsetvector+offsetvector2;
+			  offsetvector=offsetvector*2-1;
+			  
+			  //resultant texture coordinate
+			  texcoordpro=texcoordpro+getDistanceDistortion()*depthval*distorsionstrength*offsetvector;
+			  texcoordpro=clamp(texcoordpro,0.000,1.0);
+			  
+			  //normal calculation
+			  normals=texture(normalmap,texcoord*tiles+vec2(distortionoffset)).xzy;
+			  normals+=texture(normalmap,texcoord*tiles+vec2(-distortionoffset,0)).xzy;
+			  normals=normalize(normals);
+			  normals=vec3(normals.x*2-1,normals.y,normals.z*2-1);
+			  
+			  
+			  //reflection color
+			  texcoordpro.y=-1.0-texcoordpro.y;
+			  vec4 reflectioncol=texture(tex1,texcoordpro);
+			  
+			  //refraction color
+			  texcoordpro.y=-1.0-texcoordpro.y;
+			  vec4 refractioncol=texture(tex2,texcoordpro);
+			
+			  
+			  //refraction part
+			  float reflectivevalue=pow(1.0-dot(viewdir,planedir),0.09);
+			  
+			  //fernel effect by reflectivity value
+			 outcol=mix(reflectioncol,refractioncol,reflectivevalue);
+			  
+			  //specular blend
+			 outcol=mix(vec4(1.0),outcol,1.0-depthval*getSpecularValue());
+			 outcol=mix(vec4(0.0,0.0,1.0,1.0),outcol,0.90);
+			 outcol.w=depthval;
+			
+
+
+}

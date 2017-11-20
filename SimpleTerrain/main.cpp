@@ -12,7 +12,7 @@ socamera::Camera reflectcamera;
 somath::mat4 basicprojectionmat, model;
 float distorsiontime = 0.0;
 float speedofdis = 0.05;
-somath::vec3 lightpos(0, 10, 10);
+somath::vec3 lightpos(10, 10, 10);
 
 //meshes
 Plane plane1;

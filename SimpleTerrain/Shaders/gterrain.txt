@@ -1,0 +1,69 @@
+#version 330 core
+#extension GL_ARB_bindless_texture : require
+
+//input a triangle
+layout(triangles)in;
+//output the same triangle with normals
+layout(triangle_strip,max_vertices=3)out;
+
+//input data from vertex shader
+in vec3 fragpostog[];
+
+//output data to the fragment shader
+out vec3 normals;
+out vec3 fragpos;
+
+//uniform data
+uniform int clipactive;
+layout(bindless_sampler) uniform sampler2D heightmap;
+uniform vec2 worldsize;
+
+
+//calculation of smooth normals
+//normals are calculated as an approx based on the height of 4 surrounding point's height
+vec3 getNormals(vec2 texchmap)
+{
+	//offset for texturecoordinates
+	float offset=0.002;
+	
+	//get 4 surrounding points height from height map
+	float h1=texture(heightmap,texchmap).x;
+	float h2=texture(heightmap,texchmap+vec2(0.0,offset)).x;
+	float h3=texture(heightmap,texchmap+vec2(offset,0.0)).x;
+	float h4=texture(heightmap,texchmap+vec2(offset)).x;	
+
+	//use the diffrence in heights to approx the normals
+	vec3 normal=normalize(vec3(h2-h1,0.35,h4-h3));
+	
+	return normal;
+}
+
+void main()
+{
+	for(int z=0;z<3;z++)
+	{
+		//pass clipspace data as it is
+		gl_Position=gl_in[z].gl_Position;
+		
+		//clip culling based on the uniform variable clipactive
+		if(clipactive==1)
+			gl_ClipDistance[0]=dot(vec4(0.0,1.0,0.0,0.1),vec4(fragpostog[z],1.0));
+		else
+			gl_ClipDistance[0]=1;
+
+		//worldspace pos of vertex for lighting calculation sent to fragment shader
+		fragpos=fragpostog[z];
+
+		
+		
+		//calc texcoordinate for the hmap
+		vec2 hmaptexc=fragpostog[z].xz/worldsize;
+		hmaptexc+=vec2(0.5);
+		
+		//procedure for normal calculation
+		normals=getNormals(hmaptexc);
+
+		EmitVertex();
+	}
+  EndPrimitive();
+}

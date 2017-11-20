@@ -1,0 +1,58 @@
+#version 450
+#extension GL_ARB_bindless_texture : require
+
+//output color
+out vec4 outcol;
+in vec2 texcoord;
+
+//uniform data
+uniform vec2 sizeofscreen;
+layout(bindless_sampler) uniform sampler2D image;
+uniform int dohorizontalblur;  	
+
+//blur kernel made with gaussian kernel calculater
+float blurkernel[7]=float[7](0.00598 ,0.060626,0.241843,0.383103	,0.241843	,0.060626	,0.00598);				
+
+
+vec4 calculateBlurHorizontal()
+{
+        vec2 sizeofpixel=2.0/sizeofscreen;
+        float totalofkernel=0.0;
+        vec4 totalcolor=vec4(0.0);
+	for(int z=-3;z<=3;z++)
+	{
+		vec2 texcoordnew=vec2(texcoord.x+z*sizeofpixel.x,texcoord.y);
+		totalofkernel+=blurkernel[z+3];
+		totalcolor+=blurkernel[z+3]*texture(image,texcoordnew);
+	}
+          totalcolor/=totalofkernel;
+          return totalcolor;
+		
+}
+
+
+vec4 calculateBlurVertical()
+{
+        vec2 sizeofpixel=2.0/sizeofscreen;
+        float totalofkernel=0.0;
+        vec4 totalcolor=vec4(0.0);
+	for(int z=-3;z<=3;z++)
+	{
+		vec2 texcoordnew=vec2(texcoord.x,texcoord.y+z*sizeofpixel.y);
+		totalofkernel+=blurkernel[z+3];
+		totalcolor+=blurkernel[z+3]*texture(image,texcoordnew);
+	}
+          totalcolor/=totalofkernel;
+          return totalcolor;
+		
+}
+
+
+
+void main()
+{
+	if(dohorizontalblur==1)
+  	outcol=calculateBlurHorizontal();
+	else
+	outcol=calculateBlurVertical();
+}

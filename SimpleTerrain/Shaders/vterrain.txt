@@ -1,0 +1,45 @@
+#version 450
+#extension GL_ARB_bindless_texture : require
+
+//data for one instance of plane
+layout(location=0) in vec3 vpos;
+layout(location=1)in vec2 texcoord;
+layout(location=2)in vec3 norms;
+
+//translation for per plane given to the instances
+layout(location=3)in vec3 trans;
+
+
+//global data
+float maxheight=15.0f;
+
+
+//uniform data
+layout(bindless_sampler) uniform sampler2D heightmap;
+uniform mat4 project,view;
+uniform vec2 worldsize;
+uniform vec2 worldscale;
+
+
+
+//data to geometry shader
+out vec3 fragpostog;
+
+void main()
+{
+	
+	//worldpos of any vertex(no heights)
+   	fragpostog=(trans+worldscale.x*vpos);
+	
+	//set up texture coordinates for vertex, considering the whole area of terrain as one plane
+	vec2 texchmap=fragpostog.xz/(worldsize);
+	texchmap+=vec2(0.5);
+	texchmap=clamp(texchmap,0.01,0.99);
+	
+	//setheights for terrain vertex
+	fragpostog.y=maxheight*texture(heightmap,texchmap).x;
+	fragpostog.y-=8.0;
+	
+	//final clipspace coordinates (not NDCs)
+   	gl_Position=project*view*vec4(fragpostog,1.0);
+}

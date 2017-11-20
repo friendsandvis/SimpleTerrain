@@ -1,0 +1,12 @@
+#version 450
+layout(location=0) in vec3 pos;
+
+out vec3 fragpos;
+uniform mat4 project,view;
+
+void main()
+{
+  fragpos=pos;
+  vec4 tem=project*view*vec4(pos,1.0);
+  gl_Position=tem.xyww;
+}

@@ -1,0 +1,12 @@
+#version 450
+#extension GL_ARB_bindless_texture : require
+
+in vec3 fragpos;
+out vec4 fragcol;
+
+layout(bindless_sampler) uniform samplerCube cubeimage;
+
+void main()
+{
+  fragcol=texture(cubeimage,normalize(fragpos));
+}

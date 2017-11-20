@@ -1,0 +1,26 @@
+#version 450 
+#extension GL_ARB_bindless_texture : require
+
+
+layout(bindless_sampler) uniform sampler2D image;
+layout(bindless_sampler) uniform sampler2D imageblured;
+layout(bindless_sampler) uniform sampler2D imagedepth;
+uniform float np,fp;
+
+in vec2 texc;
+out vec4 colout;
+
+float convertztoDistance(float z)
+{
+	z=z*2-1;
+	z=(2*np*fp)/(np+fp-z*(fp-np));
+	return z;
+}
+
+void main()
+{
+
+	float distancefromcamera=convertztoDistance( texture(imagedepth,texc).x);
+	distancefromcamera=1.0f-smoothstep(distancefromcamera,0.0,40.0);
+	colout=mix( texture(imageblured,texc), texture(image,texc),distancefromcamera);
+}
